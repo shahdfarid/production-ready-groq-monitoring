@@ -1,0 +1,825 @@
+{
+  "name": "C3 Production Ready Groq Chatbot - Main Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "c3-deepseek-monitoring",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "dad47dfc-033f-4c90-927c-bc8d4a543a10",
+      "name": "Webhook - User Request",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        32,
+        384
+      ],
+      "webhookId": "c3-production-monitoring"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "execution_start_ms",
+              "name": "execution_start_ms",
+              "value": "={{$now.toMillis()}}",
+              "type": "number"
+            },
+            {
+              "id": "request_id",
+              "name": "request_id",
+              "value": "={{$execution.id || $json.body?.request_id || $json.request_id || String($now.toMillis())}}",
+              "type": "string"
+            },
+            {
+              "id": "workflow_name",
+              "name": "workflow_name",
+              "value": "C3 Production Ready Groq Chatbot",
+              "type": "string"
+            },
+            {
+              "id": "input_message",
+              "name": "input_message",
+              "value": "={{$json.body?.message || $json.message || \"\"}}",
+              "type": "string"
+            },
+            {
+              "id": "client_source",
+              "name": "client_source",
+              "value": "={{$json.body?.source || $json.source || \"api-test\"}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fd0c6518-9f8b-4e81-950b-8961794ca3ba",
+      "name": "Set - Start Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        288,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "message-not-empty",
+              "leftValue": "={{$json.input_message}}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "37847e87-0baa-4450-87aa-4629d710d0d8",
+      "name": "IF - Message Exists",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        544,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  \"model\": \"llama-3.1-8b-instant\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a helpful university support assistant. Answer clearly, concisely, and safely. If the user asks for unavailable private data, say that it is unavailable.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": $json.input_message\n    }\n  ],\n  \"temperature\": 0.3,\n  \"max_tokens\": 500\n} }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "ff584666-5969-4bfa-b393-afda468f6411",
+      "name": "HTTP Request - Groq Chat",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        832,
+        288
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "eufXNmpLGY0tWKTz",
+          "name": "Groq API Key"
+        }
+      },
+      "continueOnFail": true,
+      "onError": "continueRegularOutput",
+      "notes": "Use an HTTP Header Auth credential named GROQ_API_KEY with header Authorization: Bearer YOUR_KEY. Retry On Fail is enabled for production reliability."
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "timestamp",
+              "name": "timestamp",
+              "value": "={{$now.toISO()}}",
+              "type": "string"
+            },
+            {
+              "id": "status",
+              "name": "status",
+              "value": "success",
+              "type": "string"
+            },
+            {
+              "id": "duration_sec",
+              "name": "duration_sec",
+              "value": "={{Math.round((($now.toMillis() - $('Set - Start Context').first().json.execution_start_ms) / 1000) * 1000) / 1000}}",
+              "type": "number"
+            },
+            {
+              "id": "answer",
+              "name": "answer",
+              "value": "={{$json.choices?.[0]?.message?.content || $json.answer || 'No answer returned'}}",
+              "type": "string"
+            },
+            {
+              "id": "node_name",
+              "name": "node_name",
+              "value": "HTTP Request - Groq Chat",
+              "type": "string"
+            },
+            {
+              "id": "error_message",
+              "name": "error_message",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "request_id",
+              "name": "request_id",
+              "value": "={{$('Set - Start Context').first().json.request_id || $execution.id}}",
+              "type": "string"
+            },
+            {
+              "id": "workflow_name",
+              "name": "workflow_name",
+              "value": "={{$workflow.name}}",
+              "type": "string"
+            },
+            {
+              "id": "input_message",
+              "name": "input_message",
+              "value": "={{$('Set - Start Context').first().json.input_message}}",
+              "type": "string"
+            },
+            {
+              "id": "client_source",
+              "name": "client_source",
+              "value": "={{$('Set - Start Context').first().json.client_source || 'manual-test'}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d76a39e3-112a-418a-84e9-adbc93951be9",
+      "name": "Set - Success Log Row",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1344,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1zS5qByqwv3-zZ5byYAWJ2APlFcSw3MlkOHwNC_MI2QQ",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "623347195",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $json.timestamp }}",
+            "request_id": "={{ $json.request_id }}",
+            "workflow_name": "={{ $json.workflow_name }}",
+            "status": "={{ $json.status }}",
+            "duration_sec": "={{ $json.duration_sec }}",
+            "node_name": "={{ $json.node_name }}",
+            "error_message": "={{ $json.error_message }}",
+            "input_message": "={{ $json.input_message }}",
+            "client_source": "={{ $json.client_source }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "request_id",
+              "displayName": "request_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "workflow_name",
+              "displayName": "workflow_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "duration_sec",
+              "displayName": "duration_sec",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "node_name",
+              "displayName": "node_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "error_message",
+              "displayName": "error_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "input_message",
+              "displayName": "input_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "client_source",
+              "displayName": "client_source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "3c4a3694-ce70-4d5b-9845-060ea9899004",
+      "name": "Google Sheets - Append Success",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1600,
+        208
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "EFYR6n1rnSgpSekt",
+          "name": "Google Sheets account"
+        }
+      },
+      "notes": "Connect Google Sheets OAuth2 credential. The executions sheet must contain the headers from templates/google_sheets_dashboard_template.xlsx."
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, request_id: $json.request_id, duration_sec: $json.duration_sec, answer: $json.answer } }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "88845a7d-aa38-4c0b-8086-1f5a6500b91e",
+      "name": "Respond - Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1872,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: false, error: \"Missing required field: message\", expected_payload: { message: \"Your question here\" } } }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "eb39a60f-1575-4459-9631-16c815ae8bd6",
+      "name": "Respond - Bad Request",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        832,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "groq-answer-exists",
+              "leftValue": "={{$json.choices?.[0]?.message?.content || \"\"}}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "9ed4e243-b68d-4fad-80b9-9fcf7a5c068f",
+      "name": "IF - Groq Success",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1088,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "timestamp",
+              "name": "timestamp",
+              "value": "={{$now.toISO()}}",
+              "type": "string"
+            },
+            {
+              "id": "request_id",
+              "name": "request_id",
+              "value": "={{$('Set - Start Context').first().json.request_id || $execution.id}}",
+              "type": "string"
+            },
+            {
+              "id": "workflow_name",
+              "name": "workflow_name",
+              "value": "={{$workflow.name}}",
+              "type": "string"
+            },
+            {
+              "id": "status",
+              "name": "status",
+              "value": "failure",
+              "type": "string"
+            },
+            {
+              "id": "duration_sec",
+              "name": "duration_sec",
+              "value": "={{Math.round((($now.toMillis() - $('Set - Start Context').first().json.execution_start_ms) / 1000) * 1000) / 1000}}",
+              "type": "number"
+            },
+            {
+              "id": "node_name",
+              "name": "node_name",
+              "value": "HTTP Request - Groq Chat",
+              "type": "string"
+            },
+            {
+              "id": "error_message",
+              "name": "error_message",
+              "value": "={{$json.error?.message || $json.error?.description || $json.message || $json.error || JSON.stringify($json)}}",
+              "type": "string"
+            },
+            {
+              "id": "input_message",
+              "name": "input_message",
+              "value": "={{$('Set - Start Context').first().json.input_message}}",
+              "type": "string"
+            },
+            {
+              "id": "client_source",
+              "name": "client_source",
+              "value": "={{$('Set - Start Context').first().json.client_source || 'api-test'}}",
+              "type": "string"
+            },
+            {
+              "id": "alert_text",
+              "name": "alert_text",
+              "value": "={{\"Workflow FAILED\\nWorkflow: \" + ($json.workflow_name || \"C3 Production Ready Groq Chatbot\") + \"\\nNode: \" + ($json.node_name || \"HTTP Request - Groq Chat\") + \"\\nError: \" + ($json.error_message || \"Unknown error\") + \"\\nTime: \" + ($json.timestamp || $now.toISO()) + \"\\nExecution ID: \" + ($json.request_id || $execution.id) + \"\\nDuration sec: \" + ($json.duration_sec || \"N/A\")}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "555f3a88-7f13-4efc-8bc3-31c8109b2ced",
+      "name": "Set - Failure Log Row",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1344,
+        448
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1zS5qByqwv3-zZ5byYAWJ2APlFcSw3MlkOHwNC_MI2QQ",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "623347195",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{$json.timestamp}}",
+            "request_id": "={{$json.request_id}}",
+            "workflow_name": "={{$json.workflow_name}}",
+            "status": "={{$json.status}}",
+            "duration_sec": "={{$json.duration_sec}}",
+            "node_name": "={{$json.node_name}}",
+            "error_message": "={{$json.error_message}}",
+            "input_message": "={{$json.input_message}}",
+            "client_source": "={{$json.client_source}}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "request_id",
+              "displayName": "request_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "workflow_name",
+              "displayName": "workflow_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "duration_sec",
+              "displayName": "duration_sec",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "node_name",
+              "displayName": "node_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "error_message",
+              "displayName": "error_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "input_message",
+              "displayName": "input_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "client_source",
+              "displayName": "client_source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "50e6e772-ae57-4310-8f62-e2668319f3cb",
+      "name": "Google Sheets - Append Failure Local",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1600,
+        448
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "EFYR6n1rnSgpSekt",
+          "name": "Google Sheets account"
+        }
+      },
+      "notes": "Connect Google Sheets OAuth2 credential. The executions sheet must contain the headers from templates/google_sheets_dashboard_template.xlsx."
+    },
+    {
+      "parameters": {
+        "chatId": "=1166287978",
+        "text": "=Workflow FAILED\n\nWorkflow: {{ $json.workflow_name }}\nNode: {{ $json.node_name }}\nStatus: {{ $json.status }}\n\nError:\n{{ $json.error_message }}\n\nTime: {{ $json.timestamp }}\nExecution ID: {{ $json.request_id }}\nDuration sec: {{ $json.duration_sec }}\n\nSource: {{ $json.client_source }}",
+        "additionalFields": {}
+      },
+      "id": "26c65546-3859-4a0b-aaeb-2abed6d1515a",
+      "name": "Telegram - Send Local Failure Alert",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1600,
+        640
+      ],
+      "webhookId": "75f75f5c-8f89-40ed-80d5-410c52ed5f62",
+      "credentials": {
+        "telegramApi": {
+          "id": "8UG5QrrYsMThZPzp",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: false, request_id: $json.request_id, duration_sec: $json.duration_sec, error: $json.error_message } }}",
+        "options": {
+          "responseCode": 502
+        }
+      },
+      "id": "fac10eda-18bb-4dca-982a-432c992b9a3b",
+      "name": "Respond - Failure",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1872,
+        448
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook - User Request": {
+      "main": [
+        [
+          {
+            "node": "Set - Start Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set - Start Context": {
+      "main": [
+        [
+          {
+            "node": "IF - Message Exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Message Exists": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request - Groq Chat",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond - Bad Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request - Groq Chat": {
+      "main": [
+        [
+          {
+            "node": "IF - Groq Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Groq Success": {
+      "main": [
+        [
+          {
+            "node": "Set - Success Log Row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set - Failure Log Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set - Success Log Row": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets - Append Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets - Append Success": {
+      "main": [
+        [
+          {
+            "node": "Respond - Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set - Failure Log Row": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets - Append Failure Local",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Telegram - Send Local Failure Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets - Append Failure Local": {
+      "main": [
+        [
+          {
+            "node": "Respond - Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "huPaRqb5BbNdx4RN",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "63223ac0-2273-433a-9e10-446ace6329f2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9fd27e5c2339f6da3ee230d0af0dbaab28a3fe83157dd3e3a31d65a3c1cec112"
+  },
+  "id": "y5NV1oaFLEwvcOJ2",
+  "tags": [
+    {
+      "updatedAt": "2026-05-17T11:43:58.410Z",
+      "createdAt": "2026-05-17T11:43:58.410Z",
+      "id": "BYaaf5ApNFMpK6Bf",
+      "name": "AIU"
+    },
+    {
+      "updatedAt": "2026-05-17T11:43:58.358Z",
+      "createdAt": "2026-05-17T11:43:58.358Z",
+      "id": "JZAyYbvFwMLpsvYc",
+      "name": "Coursera-C3"
+    },
+    {
+      "updatedAt": "2026-05-17T11:43:58.385Z",
+      "createdAt": "2026-05-17T11:43:58.385Z",
+      "id": "tZSYiIp9lWWBs0Ez",
+      "name": "Production Monitoring"
+    }
+  ]
+}

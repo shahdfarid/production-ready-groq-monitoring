@@ -1,0 +1,307 @@
+{
+  "name": "C3 Production Ready Groq Chatbot - Error Workflow Backup",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "f52cbd70-b01a-448f-840d-938c492bf271",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        32,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "timestamp",
+              "name": "timestamp",
+              "value": "={{$now.toISO()}}",
+              "type": "string"
+            },
+            {
+              "id": "request_id",
+              "name": "request_id",
+              "value": "={{$json.execution?.id || crypto.randomUUID()}}",
+              "type": "string"
+            },
+            {
+              "id": "workflow_name",
+              "name": "workflow_name",
+              "value": "={{$json.workflow?.name || $json.execution?.workflowName || \"C3 Production Ready Groq Chatbot\"}}",
+              "type": "string"
+            },
+            {
+              "id": "status",
+              "name": "status",
+              "value": "failure",
+              "type": "string"
+            },
+            {
+              "id": "duration_sec",
+              "name": "duration_sec",
+              "value": "=0",
+              "type": "number"
+            },
+            {
+              "id": "node_name",
+              "name": "node_name",
+              "value": "={{$json.execution?.lastNodeExecuted || $json.error?.node?.name || 'Unknown node'}}",
+              "type": "string"
+            },
+            {
+              "id": "error_message",
+              "name": "error_message",
+              "value": "={{$json.error?.message || $json.execution?.error?.message || JSON.stringify($json.error || {})}}",
+              "type": "string"
+            },
+            {
+              "id": "input_message",
+              "name": "input_message",
+              "value": "=Unavailable in backup error workflow",
+              "type": "string"
+            },
+            {
+              "id": "client_source",
+              "name": "client_source",
+              "value": "error-workflow",
+              "type": "string"
+            },
+            {
+              "id": "alert_text",
+              "name": "alert_text",
+              "value": "={{\"Workflow FAILED\\nWorkflow: \" + $json.workflow_name + \"\\nNode: \" + $json.node_name + \"\\nError: \" + $json.error_message + \"\\nTime: \" + $json.timestamp + \"\\nExecution ID: \" + $json.request_id}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4f9f2e75-7710-4740-acd3-27394192cca3",
+      "name": "Set - Error Details",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        304,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1zS5qByqwv3-zZ5byYAWJ2APlFcSw3MlkOHwNC_MI2QQ",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "623347195"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{$json.timestamp}}",
+            "request_id": "={{$json.request_id}}",
+            "workflow_name": "={{$json.workflow_name}}",
+            "status": "={{$json.status}}",
+            "duration_sec": "={{$json.duration_sec}}",
+            "node_name": "={{$json.node_name}}",
+            "error_message": "={{$json.error_message}}",
+            "input_message": "={{$json.input_message}}",
+            "client_source": "={{$json.client_source}}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "request_id",
+              "displayName": "request_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "workflow_name",
+              "displayName": "workflow_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "duration_sec",
+              "displayName": "duration_sec",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "node_name",
+              "displayName": "node_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "error_message",
+              "displayName": "error_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "input_message",
+              "displayName": "input_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "client_source",
+              "displayName": "client_source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "019e7b74-0c31-4512-b210-daf2e79fc1b6",
+      "name": "Google Sheets - Append Failure",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        592,
+        208
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "EFYR6n1rnSgpSekt",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "=1166287978",
+        "text": "=Workflow FAILED\n\nWorkflow: {{ $json.workflow_name || \"Unknown workflow\" }}\nNode: {{ $json.node_name || \"Unknown failed node\" }}\nError: {{ $json.error_message || \"Unknown error\" }}\nTime: {{ $json.timestamp || $now.toISO() }}\nExecution ID: {{ $json.request_id || $execution.id }}\nDuration sec: {{ $json.duration_sec ?? 0 }}\nSource: {{ $json.client_source || \"error-workflow\" }}\n\nInput Message: {{ $json.input_message || \"Unavailable in backup error workflow\" }}",
+        "additionalFields": {}
+      },
+      "id": "482d20d0-e44e-4297-91ed-00badd67938b",
+      "name": "Telegram - Send Failure Alert",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        592,
+        400
+      ],
+      "webhookId": "660ca7cd-873e-445d-b3e5-ad5927f930e9",
+      "credentials": {
+        "telegramApi": {
+          "id": "8UG5QrrYsMThZPzp",
+          "name": "Telegram account"
+        }
+      },
+      "notes": "Use Telegram Bot credential. If you prefer Slack, replace this node with Slack Send Message and keep the same alert_text expression."
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set - Error Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set - Error Details": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets - Append Failure",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Telegram - Send Failure Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "50dcb029-a433-4400-8f88-db067fd69815",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9fd27e5c2339f6da3ee230d0af0dbaab28a3fe83157dd3e3a31d65a3c1cec112"
+  },
+  "id": "huPaRqb5BbNdx4RN",
+  "tags": [
+    {
+      "updatedAt": "2026-05-17T11:43:58.410Z",
+      "createdAt": "2026-05-17T11:43:58.410Z",
+      "id": "BYaaf5ApNFMpK6Bf",
+      "name": "AIU"
+    },
+    {
+      "updatedAt": "2026-05-17T11:43:58.358Z",
+      "createdAt": "2026-05-17T11:43:58.358Z",
+      "id": "JZAyYbvFwMLpsvYc",
+      "name": "Coursera-C3"
+    },
+    {
+      "updatedAt": "2026-05-18T12:24:35.662Z",
+      "createdAt": "2026-05-18T12:24:35.662Z",
+      "id": "7VK4cWT9Sue6vowX",
+      "name": "Error Handling"
+    }
+  ]
+}
