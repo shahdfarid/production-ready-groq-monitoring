@@ -1,8 +1,6 @@
 # Production Ready Groq Monitoring Workflow
 
-**Student:** Shahd Farid  
-**ID:** 23102240  
-**Course Task:** C3 - Production Ready Workflow with Monitoring Dashboard  
+**Course Task:** Production Ready Workflow with Monitoring Dashboard  
 **Repository:** `production-ready-groq-monitoring`
 
 This repository contains the working n8n workflows, Google Sheets dashboard template, and PowerShell testing scripts for a production-ready AI chatbot monitoring system.
